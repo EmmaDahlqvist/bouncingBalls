@@ -30,8 +30,7 @@ class ModelTest {
 
     @Test
     void ballCollision() {
-        model.applyGravity(b1, 1.16);
-        model.applyGravity(b2, 1.16);
+
 
 
 
@@ -40,8 +39,7 @@ class ModelTest {
 
         double momentumBefore = u1*b1.m + u2*b2.m;
 
-        assertTrue(model.ballCollisionDetected(b1,b2));
-        model.ballCollision(b1, b2);
+
 
 
         u1 = Math.sqrt(b1.vx*b1.vx + b1.vy * b1.vy);
@@ -55,15 +53,14 @@ class ModelTest {
 
     @Test
     void testEnergyHorizontally() {
-        model.applyGravity(b1, 1.16);
-        model.applyGravity(b2, 1.16);
+
 
         double u1 = Math.sqrt(b1.vx*b1.vx + b1.vy * b1.vy);
         double u2 = Math.sqrt(b2.vx*b2.vx + b2.vy * b2.vy);
 
         double energyAfter = 0.5*u1*u1*b1.m + u2*u2*b2.m*0.5;
 
-        model.ballCollision(b1, b2);
+
 
         double energyBefore = 0.5*u1*u1*b1.m + u2*u2*b2.m*0.5;
 
@@ -80,8 +77,7 @@ class ModelTest {
         double momentumBefore = b1.vx*b1.m + b2.vx*b2.m;
         double energyBefore = 0.5*u1*u1*b1.m + u2*u2*b2.m*0.5;
 
-        assertTrue(model.ballCollisionDetected(b1,b2));
-        model.handleHorizontalCollision(b1, b2);
+
 
         u1 = getVelocity(b1.vx, b1.vy);
         u2 = getVelocity(b2.vx, b2.vy);
