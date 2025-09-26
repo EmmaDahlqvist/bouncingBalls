@@ -1,5 +1,7 @@
 package bouncing_balls;
 
+import java.util.*;
+
 /**
  * The physics model.
  * 
@@ -21,24 +23,66 @@ class Model {
 		areaHeight = height;
 		
 		// Initialize the model with a few balls
-		balls = new Ball[2];
+		balls = new Ball[3];
 		balls[0] = new Ball(width / 3, height * 0.9, 1.2, 1.6, 0.2, 1);
 		balls[1] = new Ball(2 * width / 3, height * 0.7, -0.6, 0.6, 0.3,2);
-		//balls[0] = new Ball(width / 3, height * 0.9, 0, -1, 0.2, 1);
-		//balls[1] = new Ball(width / 3, height * 0.6, 0, 1, 0.2,1);
+		balls[2] = new Ball(width / 3, height * 0.9, 1, 1, 0.2, 1);
+		//balls[1] = new Ball(width / 2, height * 0.9, -1, 1, 0.2,1);
+		Ball b1 = balls[0];
+		Ball b2 = balls[1];
+
+
 	}
 
 	void step(double deltaT) {
 		// TODO this method implements one step of simulation with a step deltaT
+		Map<Ball, Set<Ball>> visitedBalls = new HashMap<>();
 
-		ballCollision(balls[0], balls[1]);
+		System.out.println(visitedBalls);
+
 
 		for (Ball b : balls) {
-			borderCollision(b);
+
 			applyGravity(b, deltaT);
 
 			updateBallPosition(b, deltaT);
+
+			borderCollision(b);
+			for(Ball b2 : balls) {
+				if(b.equals(b2)) {
+					continue;
+				}
+
+				if(visitedBalls.get(b) == null) {
+					ballCollision(b2, b);
+				}
+				else if(!visitedBalls.get(b).contains(b2)) {
+					ballCollision(b2, b);
+				}
+				visitedBalls.putIfAbsent(b, new HashSet<>());
+				visitedBalls.get(b).add(b2);
+
+				visitedBalls.putIfAbsent(b2, new HashSet<>());
+				visitedBalls.get(b2).add(b);
+			}
 		}
+
+		Ball b1 = balls[0];
+		Ball b2 = balls[1];
+		double v1 = Math.sqrt(b1.vx*b1.vx + b1.vy*b1.vy);
+		double v2 = Math.sqrt(b2.vx*b2.vx + b2.vy*b2.vy);
+		double energy = b1.m*v1*v1 + b2.m*v2*v2;
+		//System.out.println("b eneger: " + energy);
+
+		final double g = 9.82;
+		double Ek = 0, Ep = 0;
+		for (Ball b : balls) {
+			v2 = b.vx*b.vx + b.vy*b.vy;
+			Ek += 0.5 * b.m * v2;
+			Ep += b.m * g * b.y;   // y=0 vid golvet i din modell
+		}
+		double E = Ek + Ep;
+		System.out.println(String.format("Ek=%.5f  Ep=%.5f  E=%.5f", Ek, Ep, E));
 	}
 
 	/**
@@ -53,9 +97,8 @@ class Model {
 	 * Detect and handle collision of a ball with the border of the area.
 	 * If a collision is detected, the direction of the ball is changed.
 	 */
-	private void borderCollision(Ball b) {
+	public void borderCollision(Ball b) {
 
-		// detect collision with the border
 		if (b.x < b.radius || b.x > areaWidth - b.radius) {
 			handleXOverlap(b);
 			b.vx *= -1; // change direction of ball
@@ -88,22 +131,25 @@ class Model {
 	/**
 	 * Apply gravity to the ball by changing its vertical speed.
 	 */
-	private void applyGravity(Ball b, double deltaT) {
-		double g = 9.82 * b.m;
+	public void applyGravity(Ball b, double deltaT) {
+		double g = 9.82;
 
 		b.vy = b.vy - deltaT * g;
 	}
-	
+
+
 	/**
 	 * Detect and handle collision of two balls.
 	 * If a collision is detected, the directions of the balls are changed.
 	 */
-	private void ballCollision(Ball b1, Ball b2) {
-
+	public void ballCollision(Ball b1, Ball b2) {
 		if(ballCollisionDetected(b1, b2)) {
+
+			separateBalls(b1,b2);
+
 			double theta = Math.atan2(b2.y - b1.y, b2.x - b1.x);
 
-			//separateBalls(b1,b2);
+			System.out.println("theta " + theta);
 
 			// rotate velocities to align with collision axis
 			rotateCollisionLine(b1, b2, theta);
@@ -140,21 +186,29 @@ class Model {
 	/**
 	 * Handle collision of two balls moving in horizontal direction
 	 */
-	private void handleHorizontalCollision(Ball b1, Ball b2) {
-		double ballOneNewVX;
-		double ballTwoNewVX;
+	public void handleHorizontalCollision(Ball b1, Ball b2) {
+		double v1;
+		double v2;
 
-		ballOneNewVX = (b1.m * b1.vx + 2 * b2.m * b2.vx - b2.m * b2.vx)/(b1.m + b2.m);
-		ballTwoNewVX = b1.vx - b2.vx + ballOneNewVX;
+		double m1 = b1.m;
+		double m2 = b2.m;
+		double u1 = b1.vx;
+		double u2= b2.vx;
 
-		b1.vx = ballOneNewVX;
-		b2.vx = ballTwoNewVX;
+		v1 = (m1*u1 + 2*m2*u2 - m2*u1)/(m1 + m2);
+		v2 = u1 - u2 + v1;
+
+		b1.vx = v1;
+		System.out.println("b1: " + b1.vx);
+		b2.vx = v2;
+		System.out.println("b2: " + b2.vx);
+
 	}
 
 	/**
 	 * Detect if two balls are colliding.
 	 */
-	private boolean ballCollisionDetected(Ball b1, Ball b2) {
+	public boolean ballCollisionDetected(Ball b1, Ball b2) {
 		double dx = b2.x - b1.x;
 		double dy = b2.y - b1.y;
 		double distance = Math.sqrt(dx * dx + dy * dy);
@@ -179,23 +233,4 @@ class Model {
 		ball.vy = newVY2;
 	}
 
-	/**
-	 * Simple inner class describing balls.
-	 */
-	class Ball {
-		
-		Ball(double x, double y, double vx, double vy, double r, double m) {
-			this.x = x;
-			this.y = y;
-			this.vx = vx;
-			this.vy = vy;
-			this.radius = r;
-			this.m = m;
-		}
-
-		/**
-		 * Position, speed, and radius of the ball. You may wish to add other attributes.
-		 */
-		double x, y, vx, vy, radius, m;
-	}
 }
