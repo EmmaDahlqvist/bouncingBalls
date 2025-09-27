@@ -1,6 +1,5 @@
 package bouncing_balls;
 
-import java.util.*;
 
 /**
  * The physics model.
@@ -12,225 +11,179 @@ import java.util.*;
  * @author Simon Robillard
  *
  */
+
 class Model {
+    double areaWidth, areaHeight;
+    Ball[] balls;
 
-	double areaWidth, areaHeight;
-	
-	Ball [] balls;
+    Model(double width, double height) {
+        areaWidth = width;
+        areaHeight = height;
+        
+        balls = new Ball[3];
+        balls[0] = new Ball(width / 3, height * 0.9, 1.2, 1.6, 0.2, 1);
+        balls[1] = new Ball(2 * width / 3, height * 0.7, -0.6, 0.6, 0.3, 2);
+        balls[2] = new Ball(2 * width / 3, height * 0.7, -0.6, 0.6, 0.3, 2);
+    }
 
-	Model(double width, double height) {
-		areaWidth = width;
-		areaHeight = height;
-		
-		// Initialize the model with a few balls
-		balls = new Ball[3];
-		balls[0] = new Ball(width / 3, height * 0.9, 1.2, 1.6, 0.2, 1);
-		balls[1] = new Ball(2 * width / 3, height * 0.7, -0.6, 0.6, 0.3,2);
-		balls[2] = new Ball(width / 3, height * 0.9, 1, 1, 0.2, 1);
-		//balls[1] = new Ball(width / 2, height * 0.9, -1, 1, 0.2,1);
-		Ball b1 = balls[0];
-		Ball b2 = balls[1];
+    void step(double deltaT) {
+        for (Ball b : balls) {
+            applyGravity(b, deltaT);
+        }
+        
+        for (Ball b : balls) {
+            updatePosition(b, deltaT);
+        }
+        
+        for (Ball b : balls) {
+            handleWallCollision(b);
+        }
 
+        for(int i = 0; i < balls.length; i++) {
+            for (int j = i + 1; j < balls.length ; j++) {
+                if(isCollision(balls[i], balls[j])) {
+                    handleBallCollision(balls[i], balls[j]);
+                }
+            }
+        }
+        
+        /* if (isCollision(balls[0], balls[1])) {
 
-	}
+            handleBallCollision(balls[0], balls[1]);
+            
+        } */
+    }
 
-	void step(double deltaT) {
-		// TODO this method implements one step of simulation with a step deltaT
-		Map<Ball, Set<Ball>> visitedBalls = new HashMap<>();
+    /* Rectangular coordinates (x, y) to polar coordinates (r, theta) */
+    double[] rectToPolar(double x, double y, double centerX, double centerY) {
+        double dx = x - centerX;
+        double dy = y - centerY;
+        double r = Math.sqrt(dx * dx + dy * dy);
+        double theta = Math.atan2(dy, dx);
+        return new double[]{r, theta};
+    }
+    
+    /* Polar coordinates (r, theta) to rectangular coordinates (x, y) */
+    double[] polarToRect(double r, double theta, double centerX, double centerY) {
+        double x = centerX + r * Math.cos(theta);
+        double y = centerY + r * Math.sin(theta);
+        return new double[]{x, y};
+    }
 
-		System.out.println(visitedBalls);
+    /* Calculates the collision angle between two balls */
+    double calculateCollisionAngle (Ball b1, Ball b2) {
+        return Math.atan2(b2.y - b1.y, b2.x - b1.x);
+    }
+    
+  
+    void handleBallCollision(Ball b1, Ball b2) {
+       
 
+        /* Calculate collision angle */
+        double collisionAngle = calculateCollisionAngle(b1, b2);
+        
+       
+        
+        double[] polarB1 = rectToPolar(b1.vx, b1.vy, 0, 0);
+        double v1n = polarB1[0] * Math.cos(polarB1[1] - collisionAngle); 
+        double v1t = polarB1[0] * Math.sin(polarB1[1] - collisionAngle); 
+        
+        
+        double[] polar2 = rectToPolar(b2.vx, b2.vy, 0, 0);
+        double v2n = polar2[0] * Math.cos(polar2[1] - collisionAngle);
+        double v2t = polar2[0] * Math.sin(polar2[1] - collisionAngle);
+        
+        
 
-		for (Ball b : balls) {
+        double totalMass = b1.m + b2.m;
+        double newV1n = ((b1.m - b2.m) * v1n + 2 * b2.m * v2n) / totalMass;
+        double newV2n = ((b2.m - b1.m) * v2n + 2 * b1.m * v1n) / totalMass;
 
-			applyGravity(b, deltaT);
-
-			updateBallPosition(b, deltaT);
-
-			borderCollision(b);
-			for(Ball b2 : balls) {
-				if(b.equals(b2)) {
-					continue;
-				}
-
-				if(visitedBalls.get(b) == null) {
-					ballCollision(b2, b);
-				}
-				else if(!visitedBalls.get(b).contains(b2)) {
-					ballCollision(b2, b);
-				}
-				visitedBalls.putIfAbsent(b, new HashSet<>());
-				visitedBalls.get(b).add(b2);
-
-				visitedBalls.putIfAbsent(b2, new HashSet<>());
-				visitedBalls.get(b2).add(b);
-			}
-		}
-
-		Ball b1 = balls[0];
-		Ball b2 = balls[1];
-		double v1 = Math.sqrt(b1.vx*b1.vx + b1.vy*b1.vy);
-		double v2 = Math.sqrt(b2.vx*b2.vx + b2.vy*b2.vy);
-		double energy = b1.m*v1*v1 + b2.m*v2*v2;
-		//System.out.println("b eneger: " + energy);
-
-		final double g = 9.82;
-		double Ek = 0, Ep = 0;
-		for (Ball b : balls) {
-			v2 = b.vx*b.vx + b.vy*b.vy;
-			Ek += 0.5 * b.m * v2;
-			Ep += b.m * g * b.y;   // y=0 vid golvet i din modell
-		}
-		double E = Ek + Ep;
-		System.out.println(String.format("Ek=%.5f  Ep=%.5f  E=%.5f", Ek, Ep, E));
-	}
-
-	/**
-	 * Update the position of the ball according to its speed.
-	 */
-	private void updateBallPosition(Ball b, double deltaT) {
-		b.x += deltaT * b.vx;
-		b.y += deltaT * b.vy;
-	}
-
-	/**
-	 * Detect and handle collision of a ball with the border of the area.
-	 * If a collision is detected, the direction of the ball is changed.
-	 */
-	public void borderCollision(Ball b) {
-
-		if (b.x < b.radius || b.x > areaWidth - b.radius) {
-			handleXOverlap(b);
-			b.vx *= -1; // change direction of ball
-		}
-		if (b.y < b.radius || b.y > areaHeight - b.radius) {
-			handleYOverlap(b);
-			b.vy *= -1;
-		}
-	}
-
-	private void handleXOverlap(Ball b) {
-		b.x = b.x + getOverlap(b.x, b.radius, areaWidth);
-	}
-
-	private void handleYOverlap(Ball b) {
-		b.y = b.y + getOverlap(b.y, b.radius, areaHeight);
-	}
-
-
-	private double getOverlap(double center, double radius, double borderLength)
-	{
-		if(center < radius) {
-			return radius - center;
-		} else if(center > borderLength - radius) {
-			return -(center + radius - borderLength);
-		}
-		return 0; // no overlap
-	}
-
-	/**
-	 * Apply gravity to the ball by changing its vertical speed.
-	 */
-	public void applyGravity(Ball b, double deltaT) {
-		double g = 9.82;
-
-		b.vy = b.vy - deltaT * g;
-	}
+        
+        
+        /* Convert from (newSpeed1, newAngle2) back to rectangular */ 
+        double newSpeed1 = Math.sqrt(newV1n * newV1n + v1t * v1t);
+        double newAngle1 = Math.atan2(v1t, newV1n) + collisionAngle;
+        double[] rect1 = polarToRect(newSpeed1, newAngle1, 0, 0);
+        b1.vx = rect1[0];
+        b1.vy = rect1[1];
+        
+        /* Convert from (newSpeed2, newAngle2) back to rectangular */ 
+        double newSpeed2 = Math.sqrt(newV2n * newV2n + v2t * v2t);
+        double newAngle2 = Math.atan2(v2t, newV2n) + collisionAngle;
+        double[] rect2 = polarToRect(newSpeed2, newAngle2, 0, 0);
+        b2.vx = rect2[0];
+        b2.vy = rect2[1];
+        
+        separateBalls(b1, b2);
+    }
 
 
-	/**
-	 * Detect and handle collision of two balls.
-	 * If a collision is detected, the directions of the balls are changed.
-	 */
-	public void ballCollision(Ball b1, Ball b2) {
-		if(ballCollisionDetected(b1, b2)) {
+    void applyGravity(Ball b, double deltaT) {
+        double g = -9.8;
+        b.vy += deltaT * g;
+    }
 
-			separateBalls(b1,b2);
+    void updatePosition(Ball b, double deltaT) {
+        b.x += deltaT * b.vx;
+        b.y += deltaT * b.vy;
+    }
 
-			double theta = Math.atan2(b2.y - b1.y, b2.x - b1.x);
+    void handleWallCollision(Ball b) {
+        if (b.x < b.radius) { 
+            b.x = b.radius; 
+            b.vx = -b.vx; 
+        }
+        else if (b.x > areaWidth - b.radius) { 
+            b.x = areaWidth - b.radius; 
+            b.vx = -b.vx; 
+        }
+        
+        if (b.y < b.radius) { 
+            b.y = b.radius; 
+            b.vy = -b.vy; 
+        }
+        else if (b.y > areaHeight - b.radius) { 
+            b.y = areaHeight - b.radius; 
+            b.vy = -b.vy; 
+        }
+    }
 
-			System.out.println("theta " + theta);
+    boolean isCollision(Ball b1, Ball b2) {
+        double dx = b1.x - b2.x;
+        double dy = b1.y - b2.y;
+        double distance = Math.sqrt(dx * dx + dy * dy);
+        return distance < b1.radius + b2.radius;
+    }
 
-			// rotate velocities to align with collision axis
-			rotateCollisionLine(b1, b2, theta);
+    void separateBalls(Ball b1, Ball b2) {
+        double dx = b2.x - b1.x;
+        double dy = b2.y - b1.y;
+        double distance = Math.sqrt(dx * dx + dy * dy);
+        double overlap = (b1.radius + b2.radius) - distance;
+        
+        if (overlap > 0) {
+            double angle = Math.atan2(dy, dx);
+            double separation = overlap / 2;
+            b1.x -= separation * Math.cos(angle);
+            b1.y -= separation * Math.sin(angle);
+            b2.x += separation * Math.cos(angle);
+            b2.y += separation * Math.sin(angle);
+        }
+    }
 
-			handleHorizontalCollision(b1, b2);
+    class Ball {
 
-			// rotate velocities back
-			rotateCollisionLine(b1, b2, -theta);
-		}
-	}
+        double x, y, vx, vy, radius, m;
 
-	private void separateBalls(Ball b1, Ball b2) {
-		double dx = b2.x - b1.x;
-		double dy = b2.y - b1.y;
-		double distance = Math.sqrt(dx * dx + dy * dy);
-		double overlap = (b1.radius + b2.radius) - distance;
-
-		// Fördela överlappningen baserat på massa
-		double totalMass = b1.m + b2.m;
-		double b1Adjustment = overlap * (b2.m / totalMass);
-		double b2Adjustment = overlap * (b1.m / totalMass);
-
-		// Normalisera riktningen
-		double nx = dx / distance;
-		double ny = dy / distance;
-
-		// Justera positionerna
-		b1.x -= b1Adjustment * nx;
-		b1.y -= b1Adjustment * ny;
-		b2.x += b2Adjustment * nx;
-		b2.y += b2Adjustment * ny;
-	}
-
-	/**
-	 * Handle collision of two balls moving in horizontal direction
-	 */
-	public void handleHorizontalCollision(Ball b1, Ball b2) {
-		double v1;
-		double v2;
-
-		double m1 = b1.m;
-		double m2 = b2.m;
-		double u1 = b1.vx;
-		double u2= b2.vx;
-
-		v1 = (m1*u1 + 2*m2*u2 - m2*u1)/(m1 + m2);
-		v2 = u1 - u2 + v1;
-
-		b1.vx = v1;
-		System.out.println("b1: " + b1.vx);
-		b2.vx = v2;
-		System.out.println("b2: " + b2.vx);
-
-	}
-
-	/**
-	 * Detect if two balls are colliding.
-	 */
-	public boolean ballCollisionDetected(Ball b1, Ball b2) {
-		double dx = b2.x - b1.x;
-		double dy = b2.y - b1.y;
-		double distance = Math.sqrt(dx * dx + dy * dy);
-		return distance <= (b1.radius + b2.radius);
-	}
-
-	/**
-	 * Rotate the velocity vectors of two balls by an angle theta.
-	 */
-	private void rotateCollisionLine(Ball b1, Ball b2, double theta) {
-		rotateVectors(b1, theta);
-		rotateVectors(b2, theta);
-	}
-
-	/**
-	 * Rotate the velocity vector of a ball by an angle theta.
-	 */
-	private void rotateVectors(Ball ball, double theta) {
-		double newVX2 = ball.vx * Math.cos(theta) - ball.vy * Math.sin(theta);
-		double newVY2 = ball.vx * Math.sin(theta) + ball.vy * Math.cos(theta);
-		ball.vx = newVX2;
-		ball.vy = newVY2;
-	}
-
+        Ball(double x, double y, double vx, double vy, double r, double m) {
+            this.x = x; 
+            this.y = y; 
+            this.vx = vx; 
+            this.vy = vy; 
+            this.radius = r; 
+            this.m = m;
+        }
+    }
+    
 }
