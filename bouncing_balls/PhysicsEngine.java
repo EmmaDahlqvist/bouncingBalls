@@ -2,20 +2,24 @@ package bouncing_balls;
 
 public class PhysicsEngine {
 
-    public void applyGravity(PhysicalObject movable, double deltaT) {
-        double g = -9.82;
-        movable.setVY(movable.getVY() + g * deltaT);
+
+
+    public void applyGravity(PhysicalObject physicalObject, double deltaT) {
+        double g = -9.82; // Gravitational acceleration
+        double newVY = physicalObject.getVY() + g * deltaT; // Update velocity using Euler's method
+        physicalObject.setVY(newVY);
     }
 
-    public void updatePosition(PhysicalObject collidable, double deltaT) {
-        double newX = collidable.getX() + collidable.getVX() * deltaT;
-        double newY = collidable.getY() + collidable.getVY() * deltaT;
-        collidable.setX(newX);
-        collidable.setY(newY);
+    public void updatePosition(PhysicalObject physicalObject, double deltaT) {
+        double newX = physicalObject.getX() + physicalObject.getVX() * deltaT;
+        double newY = physicalObject.getY() + physicalObject.getVY() * deltaT;
+        physicalObject.setX(newX);
+        physicalObject.setY(newY);
     }
 
 
     public void handleWallCollision(PhysicalObject c, double areaWidth, double areaHeight) {
+
         if (c.getX() < c.getRadius() || c.getX() > areaWidth - c.getRadius()) {
             handleXOverlap(c, areaWidth);
             c.setVX(c.getVX()*-1); // change direction of ball
@@ -67,19 +71,15 @@ public class PhysicsEngine {
         double distance = Math.sqrt(dx * dx + dy * dy);
         double overlap = (c1.getRadius() + c2.getRadius()) - distance;
 
-        // Fördela överlappningen baserat på massa
-
-
-        // Normalisera riktningen
+        // Normalize the distance vector
         double nx = dx / distance;
         double ny = dy / distance;
 
-        // Justera positionerna
+        // Adjust positions to separate the balls
         c1.setX(c1.getX() - overlap*nx);
         c1.setY(c1.getY() - overlap*ny);
         c2.setX(c2.getX() + overlap*nx);
         c2.setY(c2.getY() + overlap*ny);
-
     }
 
     /**
