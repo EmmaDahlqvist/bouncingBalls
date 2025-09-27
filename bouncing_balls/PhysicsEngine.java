@@ -108,7 +108,7 @@ public class PhysicsEngine {
     public void handleCollisionBetweenObjects(PhysicalObject c1, PhysicalObject c2) {
         if(objectCollisionDetected(c1, c2)) {
 
-            separateBalls(c1,c2);
+            //separateBalls(c1,c2);
 
             double theta = Math.atan2(c2.getY() - c1.getY(), c2.getX() - c1.getX());
 
@@ -119,6 +119,8 @@ public class PhysicsEngine {
 
             // rotate velocities back
             rotateCollisionLine(c1, c2, -theta);
+
+            separateBallsAfterCollision(c1, c2, theta);
 
         }
     }
@@ -131,6 +133,7 @@ public class PhysicsEngine {
         double dy = c2.getY() - c1.getY();
         double distance = Math.sqrt(dx * dx + dy * dy);
         double minDist = c1.getRadius() + c2.getRadius();
+        double tolerance = 10; // small tolerance to avoid jittering
 
         double overlap = minDist - distance;
 
@@ -138,21 +141,32 @@ public class PhysicsEngine {
         double nx = dx / distance;
         double ny = dy / distance;
 
-        positionalCorrection(c1, c2, overlap, nx, ny);
+        c1.setX(c1.getX() - overlap*nx);
+        c1.setY(c1.getY() - overlap*ny );
+        c2.setX(c2.getX() + overlap*nx);
+        c2.setY(c2.getY() + overlap*ny);
     }
 
-    private static final double PERCENT = 0.8; // hur mycket av överlappen som korrigeras
-    private static final double SLOP = 0.01;   // tolerans (ignorera små penetreringar)
+    private void separateBallsAfterCollision(PhysicalObject c1, PhysicalObject c2, double theta) {
+        double dx = c2.getX() - c1.getX();
+        double dy = c2.getY() - c1.getY();
+        double distance = Math.sqrt(dx * dx + dy * dy);
+        double minDist = c1.getRadius() + c2.getRadius();
+        double tolerance = 0.001; // small tolerance to avoid jittering
 
-    private void positionalCorrection(PhysicalObject c1, PhysicalObject c2, double overlap, double nx, double ny) {
-        double correction = Math.max(overlap - SLOP, 0.0) * (PERCENT / (c1.getMass() + c2.getMass()));
-        double correctionX = correction * nx;
-        double correctionY = correction * ny;
+        double overlap = minDist - distance;
 
-        c1.setX(c1.getX() - correctionX * c2.getMass());
-        c1.setY(c1.getY() - correctionY * c2.getMass());
-        c2.setX(c2.getX() + correctionX * c1.getMass());
-        c2.setY(c2.getY() + correctionY * c1.getMass());
+        if (overlap > 0) {
+            // Normalize the collision axis, to get the direction
+            double nx = Math.cos(theta);
+            double ny = Math.sin(theta);
+
+            // Adjust positions along the collision axis
+            c1.setX(c1.getX() - overlap * nx / 2 - tolerance * nx);
+            c1.setY(c1.getY() - overlap * ny / 2 - tolerance * ny);
+            c2.setX(c2.getX() + overlap * nx / 2 + tolerance * nx);
+            c2.setY(c2.getY() + overlap * ny / 2 + tolerance * ny);
+        }
     }
 
     /**
