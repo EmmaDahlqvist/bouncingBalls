@@ -2,8 +2,6 @@ package bouncing_balls;
 
 public class Ball implements PhysicalObject {
 
-    private PhysicsEngine physicsEngine;
-
     Ball(double x, double y, double vx, double vy, double r, double m) {
         this.x = x;
         this.y = y;
@@ -11,22 +9,12 @@ public class Ball implements PhysicalObject {
         this.vy = vy;
         this.radius = r;
         this.m = m;
-
-        this.physicsEngine = new PhysicsEngine();
     }
 
     /**
      * Position, speed, and radius of the ball. You may wish to add other attributes.
      */
     double x, y, vx, vy, radius, m;
-
-    public void updatePosition(double deltaT) {
-        physicsEngine.updatePosition(this, deltaT);
-    }
-
-    public void applyGravity(double deltaT) {
-        physicsEngine.applyGravity(this, deltaT);
-    }
 
     @Override
     public double getMass() {
@@ -36,16 +24,6 @@ public class Ball implements PhysicalObject {
     @Override
     public double getRadius() {
         return this.radius;
-    }
-
-    @Override
-    public void handleCollisionWithPhysicalObject(PhysicalObject physicalObject) {
-        physicsEngine.handleCollisionBetweenObjects(this, physicalObject);
-    }
-
-    @Override
-    public void handleWallCollision(double areaWidth, double areaHeight) {
-        physicsEngine.handleWallCollision(this, areaWidth, areaHeight);
     }
 
     @Override

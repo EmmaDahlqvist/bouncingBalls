@@ -100,7 +100,7 @@ class ModelTest {
         Ball b1 = new Ball(10, 10, 0, 0, 2, 1); // Boll 1
         Ball b2 = new Ball(11, 10, 0, 0, 2, 1); // Boll 2 (överlappande)
 
-        PhysicsEngine physicsEngine = new PhysicsEngine();
+        PhysicsEngine physicsEngine = new PhysicsEngine(50, 50);
 
         // Beräkna initial energi
         double initialEnergy = 0.5 * b1.m * (b1.vx * b1.vx + b1.vy * b1.vy)
@@ -126,7 +126,7 @@ class ModelTest {
         Ball b1 = new Ball(10, 10, 1, 1, 1, 1); // Boll 1 rör sig diagonalt uppåt höger
         Ball b2 = new Ball(12, 12, -1, -1, 1, 1); // Boll 2 rör sig diagonalt nedåt vänster
 
-        PhysicsEngine physicsEngine = new PhysicsEngine();
+        PhysicsEngine physicsEngine = new PhysicsEngine(50, 50);
 
         // Beräkna initial energi
         double initialEnergy = 0.5 * b1.m * (b1.vx * b1.vx + b1.vy * b1.vy)
@@ -153,7 +153,7 @@ class ModelTest {
         Ball b1 = new Ball(10, 10, 5, 0, 1, 1); // Ball 1 moving right
         Ball b2 = new Ball(15, 10, -5, 0, 1, 1); // Ball 2 moving left
 
-        PhysicsEngine physicsEngine = new PhysicsEngine();
+        PhysicsEngine physicsEngine = new PhysicsEngine(50, 50);
         double deltaT = 0.01; // Small time step for precision
         int steps = 100; // Number of simulation steps
 
@@ -184,7 +184,7 @@ class ModelTest {
     void testEnergyConservationWithGravity() {
         // Skapa en boll med initial position och hastighet
         Ball ball = new Ball(10, 10, 0, 0, 1, 1); // Boll med massa 1 kg, stillastående
-        PhysicsEngine physicsEngine = new PhysicsEngine();
+        PhysicsEngine physicsEngine = new PhysicsEngine(50, 50);
         double deltaT = 0.1; // Tidssteg
 
         // Beräkna initial energi (potentiell + kinetisk)
@@ -206,4 +206,18 @@ class ModelTest {
         // Kontrollera att den totala energin är bevarad
         assertEquals(initialTotalEnergy, finalTotalEnergy, 1e-6, "Energy is not conserved when applying gravity");
     }
+
+/*    @Test
+    void testRoundTripRotation() {
+        Ball ball = new Ball(0, 0, 1, 1, 1, 1); // Example ball
+        PhysicsEngine physicsEngine = new PhysicsEngine(50, 50);
+
+        double theta = Math.PI / 4; // 45 degrees
+        physicsEngine.rotateVectors(ball, theta);
+        physicsEngine.rotateVectors(ball, -theta);
+
+        // Assert that the vector returns to its original state
+        assertEquals(1, ball.vx, 1e-6, "VX did not return to original value");
+        assertEquals(1, ball.vy, 1e-6, "VY did not return to original value");
+    }*/
 }

@@ -16,6 +16,8 @@ class Model {
 	
 	Ball [] balls;
 
+	PhysicsEngine physicsEngine;
+
 	Model(double width, double height) {
 		areaWidth = width;
 		areaHeight = height;
@@ -27,25 +29,20 @@ class Model {
 		//balls[2] = new Ball(width / 3, height * 0.9, 1, 1, 0.2, 1);
 		//balls[3] = new Ball(width / 2, height * 0.9, -1, 1, 0.2,1);
 
+		physicsEngine = new PhysicsEngine(width, height);
+
 
 	}
 
 	void step(double deltaT) {
 		// Update position of balls and handle wall collisions
-		for (Ball b : balls) {
-			b.updatePosition(deltaT);
-			b.applyGravity(deltaT);
-			b.handleWallCollision(areaWidth, areaHeight);
+		int subSteps = 2; // amount of sub-steps to improve accuracy
+		double subDt = deltaT / subSteps;
+
+		for (int i = 0; i < subSteps; i++) {
+			physicsEngine.update(balls, subDt);
 		}
 
-		// Collision between balls
-		for (int i = 0; i < balls.length; i++) {
-			for (int j = i + 1; j < balls.length; j++) {
-				Ball b1 = balls[i];
-				Ball b2 = balls[j];
-				b1.handleCollisionWithPhysicalObject(b2);
-			}
-		}
 
 		// Beräkna total energi och rörelsemängd
 		calculateTotalEnergyAndMomentum();
