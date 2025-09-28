@@ -12,7 +12,7 @@ public class Ball implements PhysicalObject {
     }
 
     /**
-     * Position, speed, and radius of the ball. You may wish to add other attributes.
+     * Position, speed, and radius, mass of the ball.
      */
     double x, y, vx, vy, radius, m;
 

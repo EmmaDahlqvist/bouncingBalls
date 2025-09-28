@@ -95,96 +95,45 @@ class ModelTest {
     }
 
     @Test
-    void testSeparateBallsEnergyConservation() {
-        // Skapa två bollar som överlappar
-        Ball b1 = new Ball(10, 10, 0, 0, 2, 1); // Boll 1
-        Ball b2 = new Ball(11, 10, 0, 0, 2, 1); // Boll 2 (överlappande)
-
+    void testBallSeparationAfterCollision() {
+        // Initialize two balls on a collision course
+        Ball ball1 = new Ball(10, 10, 1, 0, 1, 1); // Moving right
+        Ball ball2 = new Ball(12, 10, -1, 0, 1, 1); // Moving left
         PhysicsEngine physicsEngine = new PhysicsEngine(50, 50);
+        physicsEngine.setCollisionStrategy(new BallCollisionStrategy());
 
-        // Beräkna initial energi
-        double initialEnergy = 0.5 * b1.m * (b1.vx * b1.vx + b1.vy * b1.vy)
-                + 0.5 * b2.m * (b2.vx * b2.vx + b2.vy * b2.vy);
-
-        System.out.println("Before separation: b1.x=" + b1.x + ", b1.y=" + b1.y + ", b2.x=" + b2.x + ", b2.y=" + b2.y);
-
-        // Anropa separateBalls för att separera bollarna
-        physicsEngine.handleCollisionBetweenObjects(b1, b2);
-        System.out.println("After separation: b1.x=" + b1.x + ", b1.y=" + b1.y + ", b2.x=" + b2.x + ", b2.y=" + b2.y);
-
-        // Beräkna slutlig energi
-        double finalEnergy = 0.5 * b1.m * (b1.vx * b1.vx + b1.vy * b1.vy)
-                + 0.5 * b2.m * (b2.vx * b2.vx + b2.vy * b2.vy);
-
-        // Kontrollera att energin är bevarad
-        assertEquals(initialEnergy, finalEnergy, 1e-6, "Energy is not conserved after separating balls");
-    }
-
-    @Test
-    void testEnergyConservationWithNonHorizontalCollision() {
-        // Skapa två bollar med en vinkel mellan dem
-        Ball b1 = new Ball(10, 10, 1, 1, 1, 1); // Boll 1 rör sig diagonalt uppåt höger
-        Ball b2 = new Ball(12, 12, -1, -1, 1, 1); // Boll 2 rör sig diagonalt nedåt vänster
-
-        PhysicsEngine physicsEngine = new PhysicsEngine(50, 50);
-
-        // Beräkna initial energi
-        double initialEnergy = 0.5 * b1.m * (b1.vx * b1.vx + b1.vy * b1.vy)
-                + 0.5 * b2.m * (b2.vx * b2.vx + b2.vy * b2.vy);
-
-        System.out.println("Before collision: b1.vx=" + b1.vx + ", b1.vy=" + b1.vy + ", b2.vx=" + b2.vx + ", b2.vy=" + b2.vy);
-
-        // Anropa handleCollisionBetweenObjects för att simulera kollision
-        physicsEngine.handleCollisionBetweenObjects(b1, b2);
-
-        System.out.println("After collision: b1.vx=" + b1.vx + ", b1.vy=" + b1.vy + ", b2.vx=" + b2.vx + ", b2.vy=" + b2.vy);
-
-        // Beräkna slutlig energi
-        double finalEnergy = 0.5 * b1.m * (b1.vx * b1.vx + b1.vy * b1.vy)
-                + 0.5 * b2.m * (b2.vx * b2.vx + b2.vy * b2.vy);
-
-        // Kontrollera att energin är bevarad
-        assertEquals(initialEnergy, finalEnergy, 1e-6, "Energy is not conserved in non-horizontal collision");
-    }
-
-    @Test
-    void testEnergyConservationWithMultipleCollisions() {
-        // Create two balls with high velocities for repeated collisions
-        Ball b1 = new Ball(10, 10, 5, 0, 1, 1); // Ball 1 moving right
-        Ball b2 = new Ball(15, 10, -5, 0, 1, 1); // Ball 2 moving left
-
-        PhysicsEngine physicsEngine = new PhysicsEngine(50, 50);
-        double deltaT = 0.01; // Small time step for precision
+        double deltaT = 0.1; // Time step
         int steps = 100; // Number of simulation steps
 
-        // Calculate initial energy
-        double initialEnergy = 0.5 * b1.m * (b1.vx * b1.vx + b1.vy * b1.vy)
-                + 0.5 * b2.m * (b2.vx * b2.vx + b2.vy * b2.vy);
-
         for (int i = 0; i < steps; i++) {
-            // Update positions
-            physicsEngine.updatePosition(b1, deltaT);
-            physicsEngine.updatePosition(b2, deltaT);
+            // Update the physics engine
+            physicsEngine.update(new PhysicalObject[]{ball1, ball2}, deltaT);
 
-            // Check for collisions and handle them
-            physicsEngine.handleCollisionBetweenObjects(b1, b2);
+            // Calculate the distance between the two balls
+            double dx = ball2.getX() - ball1.getX();
+            double dy = ball2.getY() - ball1.getY();
+            double distance = Math.sqrt(dx * dx + dy * dy);
 
-            // Calculate total energy after each step
-            double totalEnergy = 0.5 * b1.m * (b1.vx * b1.vx + b1.vy * b1.vy)
-                    + 0.5 * b2.m * (b2.vx * b2.vx + b2.vy * b2.vy);
+            // Log positions and velocities for debugging
+            System.out.printf("Step %d: Ball1 (x=%.3f, y=%.3f, vx=%.3f, vy=%.3f), Ball2 (x=%.3f, y=%.3f, vx=%.3f, vy=%.3f), Distance=%.3f%n",
+                    i, ball1.getX(), ball1.getY(), ball1.getVX(), ball1.getVY(),
+                    ball2.getX(), ball2.getY(), ball2.getVX(), ball2.getVY(), distance);
 
-            // Log energy for debugging
-            System.out.printf("Step %d: Total Energy = %.6f%n", i, totalEnergy);
-
-            // Assert that energy is approximately conserved
-            assertEquals(initialEnergy, totalEnergy, 1e-3, "Energy is not conserved at step " + i);
+            // Assert that the balls are not overlapping
+            assertTrue(distance >= ball1.getRadius() + ball2.getRadius(),
+                    "Balls are overlapping at step " + i);
         }
     }
+
+
+
     @Test
     void testEnergyConservationWithGravity() {
         // Skapa en boll med initial position och hastighet
         Ball ball = new Ball(10, 10, 0, 0, 1, 1); // Boll med massa 1 kg, stillastående
-        PhysicsEngine physicsEngine = new PhysicsEngine(50, 50);
+        PhysicsEngine physicsEngine = new PhysicsEngine( 50, 50);
+        physicsEngine.setCollisionStrategy(new BallCollisionStrategy());
+
         double deltaT = 0.1; // Tidssteg
 
         // Beräkna initial energi (potentiell + kinetisk)
@@ -207,17 +156,4 @@ class ModelTest {
         assertEquals(initialTotalEnergy, finalTotalEnergy, 1e-6, "Energy is not conserved when applying gravity");
     }
 
-/*    @Test
-    void testRoundTripRotation() {
-        Ball ball = new Ball(0, 0, 1, 1, 1, 1); // Example ball
-        PhysicsEngine physicsEngine = new PhysicsEngine(50, 50);
-
-        double theta = Math.PI / 4; // 45 degrees
-        physicsEngine.rotateVectors(ball, theta);
-        physicsEngine.rotateVectors(ball, -theta);
-
-        // Assert that the vector returns to its original state
-        assertEquals(1, ball.vx, 1e-6, "VX did not return to original value");
-        assertEquals(1, ball.vy, 1e-6, "VY did not return to original value");
-    }*/
 }

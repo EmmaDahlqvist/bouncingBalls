@@ -1,10 +1,14 @@
 package bouncing_balls;
 
-import java.util.List;
-
+/**
+ * The physics engine that updates positions and velocities of physical objects.
+ * It applies gravity, handles wall collisions, and handles collisions between objects using a specified strategy.
+ */
 public class PhysicsEngine {
 
-    private double areaWidth, areaHeight;
+    private final double areaWidth;
+    private final double areaHeight;
+    private PhysicalObjectCollisionStrategy strategy;
 
     public PhysicsEngine(double areaWidth, double areaHeight) {
         this.areaWidth = areaWidth;
@@ -30,9 +34,9 @@ public class PhysicsEngine {
         // Collision between balls
         for (int i = 0; i < physicalObjects.length; i++) {
             for (int j = i + 1; j < physicalObjects.length; j++) {
-                PhysicalObject p1 = physicalObjects[i];
-                PhysicalObject p2 = physicalObjects[j];
-                handleCollisionBetweenObjects(p1, p2);
+                PhysicalObject obj1 = physicalObjects[i];
+                PhysicalObject obj2 = physicalObjects[j];
+                strategy.handleCollision(obj1, obj2); // Use strategy to handle collision
             }
         }
     }
@@ -40,50 +44,50 @@ public class PhysicsEngine {
     /**
      * Apply gravitational force to a ball, updating its vertical velocity.
      */
-    public void applyGravity(PhysicalObject physicalObject, double deltaT) {
+    public void applyGravity(PhysicalObject obj, double deltaT) {
         double g = -9.82; // Gravitational acceleration
-        double newVY = physicalObject.getVY() + g * deltaT; // Update velocity using Euler's method
-        physicalObject.setVY(newVY);
+        double newVY = obj.getVY() + g * deltaT; // Update velocity using Euler's method
+        obj.setVY(newVY);
     }
 
     /**
      * Update position of a ball based on its velocity and the time step deltaT.
      */
-    public void updatePosition(PhysicalObject physicalObject, double deltaT) {
-        double newX = physicalObject.getX() + physicalObject.getVX() * deltaT;
-        double newY = physicalObject.getY() + physicalObject.getVY() * deltaT;
-        physicalObject.setX(newX);
-        physicalObject.setY(newY);
+    public void updatePosition(PhysicalObject obj, double deltaT) {
+        double newX = obj.getX() + obj.getVX() * deltaT;
+        double newY = obj.getY() + obj.getVY() * deltaT;
+        obj.setX(newX);
+        obj.setY(newY);
     }
 
 
     /**
      * Handle collision of ball with walls.
      */
-    public void handleWallCollision(PhysicalObject c, double areaWidth, double areaHeight) {
+    public void handleWallCollision(PhysicalObject obj, double areaWidth, double areaHeight) {
 
-        if (c.getX() < c.getRadius() || c.getX() > areaWidth - c.getRadius()) {
-            handleXOverlap(c, areaWidth);
-            c.setVX(c.getVX()*-1); // change direction of ball
+        if (obj.getX() < obj.getRadius() || obj.getX() > areaWidth - obj.getRadius()) {
+            handleXOverlap(obj, areaWidth);
+            obj.setVX(obj.getVX()*-1); // change direction of ball
         }
-        if (c.getY() < c.getRadius() || c.getY() > areaHeight - c.getRadius()) {
-            handleYOverlap(c, areaHeight);
-            c.setVY(c.getVY()*-1);
+        if (obj.getY() < obj.getRadius() || obj.getY() > areaHeight - obj.getRadius()) {
+            handleYOverlap(obj, areaHeight);
+            obj.setVY(obj.getVY()*-1);
         }
     }
 
     /**
      * Adjust x position of ball if it overlaps with left or right wall.
      */
-    private void handleXOverlap(PhysicalObject c, double areaWidth) {
-        c.setX(c.getX() + getOverlap(c.getX(), c.getRadius(), areaWidth));
+    private void handleXOverlap(PhysicalObject obj, double areaWidth) {
+        obj.setX(obj.getX() + getOverlap(obj.getX(), obj.getRadius(), areaWidth));
     }
 
     /**
      * Adjust y position of ball if it overlaps with top or bottom wall.
      */
-    private void handleYOverlap(PhysicalObject c, double areaHeight) {
-        c.setY(c.getY() + getOverlap(c.getY(), c.getRadius(), areaHeight));
+    private void handleYOverlap(PhysicalObject obj, double areaHeight) {
+        obj.setY(obj.getY() + getOverlap(obj.getY(), obj.getRadius(), areaHeight));
     }
 
     /**
@@ -102,117 +106,7 @@ public class PhysicsEngine {
         return 0; // no overlap
     }
 
-    /**
-     * Handle collision between two balls.
-     */
-    public void handleCollisionBetweenObjects(PhysicalObject c1, PhysicalObject c2) {
-        if(objectCollisionDetected(c1, c2)) {
-
-            //separateBalls(c1,c2);
-
-            double theta = Math.atan2(c2.getY() - c1.getY(), c2.getX() - c1.getX());
-
-            // rotate velocities to align with collision axis
-            rotateCollisionLine(c1, c2, theta);
-
-            handleHorizontalCollision(c1, c2);
-
-            // rotate velocities back
-            rotateCollisionLine(c1, c2, -theta);
-
-            separateBallsAfterCollision(c1, c2, theta);
-
-        }
+    public void setCollisionStrategy(PhysicalObjectCollisionStrategy strategy) {
+        this.strategy = strategy;
     }
-
-    /**
-     * Separate two overlapping balls based on their masses.
-     */
-    private void separateBalls(PhysicalObject c1, PhysicalObject c2) {
-        double dx = c2.getX() - c1.getX();
-        double dy = c2.getY() - c1.getY();
-        double distance = Math.sqrt(dx * dx + dy * dy);
-        double minDist = c1.getRadius() + c2.getRadius();
-        double tolerance = 10; // small tolerance to avoid jittering
-
-        double overlap = minDist - distance;
-
-        // normalized direction vector between balls
-        double nx = dx / distance;
-        double ny = dy / distance;
-
-        c1.setX(c1.getX() - overlap*nx);
-        c1.setY(c1.getY() - overlap*ny );
-        c2.setX(c2.getX() + overlap*nx);
-        c2.setY(c2.getY() + overlap*ny);
-    }
-
-    private void separateBallsAfterCollision(PhysicalObject c1, PhysicalObject c2, double theta) {
-        double dx = c2.getX() - c1.getX();
-        double dy = c2.getY() - c1.getY();
-        double distance = Math.sqrt(dx * dx + dy * dy);
-        double minDist = c1.getRadius() + c2.getRadius();
-        double tolerance = 0.001; // small tolerance to avoid jittering
-
-        double overlap = minDist - distance;
-
-        if (overlap > 0) {
-            // Normalize the collision axis, to get the direction
-            double nx = Math.cos(theta);
-            double ny = Math.sin(theta);
-
-            // Adjust positions along the collision axis
-            c1.setX(c1.getX() - overlap * nx / 2 - tolerance * nx);
-            c1.setY(c1.getY() - overlap * ny / 2 - tolerance * ny);
-            c2.setX(c2.getX() + overlap * nx / 2 + tolerance * nx);
-            c2.setY(c2.getY() + overlap * ny / 2 + tolerance * ny);
-        }
-    }
-
-    /**
-     * Handle collision of two balls moving in horizontal direction
-     */
-    private void handleHorizontalCollision(PhysicalObject p1, PhysicalObject p2) {
-
-        double m1 = p1.getMass();
-        double m2 = p2.getMass();
-        double u1 = p1.getVX();
-        double u2= p2.getVX();
-
-        double v1 = (m1*u1 + 2*m2*u2 - m2*u1)/(m1 + m2);
-        double v2 = u1 - u2 + v1;
-
-        p1.setVX(v1);
-        p2.setVX(v2);
-    }
-
-    /**
-     * Detect if two balls are colliding.
-     */
-    private boolean objectCollisionDetected(PhysicalObject o1, PhysicalObject o2) {
-        double dx = o2.getX() - o1.getX();
-        double dy = o2.getY() - o1.getY();
-        double distance = Math.sqrt(dx * dx + dy * dy);
-        double EPSILON = 0.001; // small tolerance for stability
-        return distance < (o1.getRadius() + o2.getRadius()) - EPSILON;
-    }
-
-    /**
-     * Rotate the velocity vectors of two balls by an angle theta.
-     */
-    private void rotateCollisionLine(PhysicalObject o1, PhysicalObject o2, double theta) {
-        rotateVectors(o1, theta);
-        rotateVectors(o2, theta);
-    }
-
-    /**
-     * Rotate the velocity vector of a ball by an angle theta.
-     */
-    private void rotateVectors(PhysicalObject obj, double theta) {
-        double vx = obj.getVX() * Math.cos(theta) - obj.getVY() * Math.sin(theta);
-        double vy = obj.getVX() * Math.sin(theta) + obj.getVY() * Math.cos(theta);
-        obj.setVX(vx);
-        obj.setVY(vy);
-    }
-
 }
