@@ -1,6 +1,6 @@
 package bouncing_balls;
 
-public interface PhysicalObject extends Positionable, Movable {
+public interface PhysicalObject {
 
     double getMass();
     double getRadius();
@@ -8,4 +8,8 @@ public interface PhysicalObject extends Positionable, Movable {
     double getVY();
     double getX();
     double getY();
+    void setVX(double vx);
+    void setVY(double vy);
+    void setX(double x);
+    void setY(double y);
 }
