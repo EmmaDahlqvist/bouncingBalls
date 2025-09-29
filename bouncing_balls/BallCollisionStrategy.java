@@ -110,13 +110,13 @@ public class BallCollisionStrategy implements PhysicalObjectCollisionStrategy {
     /**
      * Calculates the collision angle between two physical objects.
      * 
-     * @param b1 is the first physical object
-     * @param b2 is the second physical object
+     * @param obj1 is the first physical object
+     * @param obj2 is the second physical object
      * @return the collision angle 
      */
     
-    double calculateCollisionAngle (PhysicalObject b1, PhysicalObject b2) {
-        return Math.atan2(b2.getY() - b1.getY(), b2.getX() - b1.getX());
+    double calculateCollisionAngle (PhysicalObject obj1, PhysicalObject obj2) {
+        return Math.atan2(obj2.getY() - obj1.getY(), obj2.getX() - obj1.getX());
     }
 
     /**
