@@ -104,6 +104,9 @@ public class PhysicsEngine {
         return 0; // no overlap
     }
 
+    /**
+     * Set the collision strategy to be used for handling collisions between physical objects.
+     */
     public void setCollisionStrategy(PhysicalObjectCollisionStrategy strategy) {
         this.strategy = strategy;
     }

@@ -1,5 +1,10 @@
 package bouncing_balls;
 
+/**
+ * Interface for physical objects that can collide with each other.
+ * Objects has position, velocity, mass, and radius.
+ *
+ */
 public interface PhysicalObject {
 
     double getMass();

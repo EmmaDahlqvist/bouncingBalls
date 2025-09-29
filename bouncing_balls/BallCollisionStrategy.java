@@ -48,12 +48,11 @@ public class BallCollisionStrategy implements PhysicalObjectCollisionStrategy {
     /**
      * Detect if two balls are colliding.
      */
-    private boolean objectCollisionDetected(PhysicalObject o1, PhysicalObject o2) {
-        double dx = o2.getX() - o1.getX();
-        double dy = o2.getY() - o1.getY();
+    private boolean objectCollisionDetected(PhysicalObject obj1, PhysicalObject obj2) {
+        double dx = obj2.getX() - obj1.getX();
+        double dy = obj2.getY() - obj1.getY();
         double distance = Math.sqrt(dx * dx + dy * dy);
-        double EPSILON = 0.001; // small tolerance for stability
-        return distance < (o1.getRadius() + o2.getRadius()) - EPSILON;
+        return distance < (obj1.getRadius() + obj2.getRadius());
     }
 
     /**
@@ -84,7 +83,7 @@ public class BallCollisionStrategy implements PhysicalObjectCollisionStrategy {
     }
 
     /**
-     * Handle collision horizontally, 1D
+     * Handle collision horizontally, 1D, conserves momentum and energy
      */
     double[] handleHorizontalCollision(PhysicalObject obj1, PhysicalObject obj2, double v1n, double v2n) {
         double totalMass =  obj1.getMass() + obj2.getMass();
