@@ -7,20 +7,42 @@ public class BallCollisionStrategy implements PhysicalObjectCollisionStrategy {
      */
     @Override
     public void handleCollision(PhysicalObject obj1, PhysicalObject obj2) {
-        if(objectCollisionDetected(obj1, obj2)) {
-            double theta = Math.atan2(obj2.getY() - obj1.getY(), obj2.getX() - obj1.getX());
-
-            separateBallsBeforeCollision(obj1, obj2);
-
-            // rotate velocities to align with collision axis
-            rotateCollisionLine(obj1, obj2, theta);
-
-            handleHorizontalCollision(obj1, obj2);
-
-            // rotate velocities back
-            rotateCollisionLine(obj1, obj2, -theta);
-
+        if(!objectCollisionDetected(obj1, obj2)) {
+            return;
         }
+        // Calculate collision angle
+        double collisionAngle = calculateCollisionAngle(obj1, obj2);
+
+        // Convert velocities to polar coordinates, rotate coordinate system
+        double[] polarB1 = rectToPolar(obj1.getVX(), obj1.getVY(), 0, 0);
+        double v1n = polarB1[0] * Math.cos(polarB1[1] - collisionAngle);
+        double v1t = polarB1[0] * Math.sin(polarB1[1] - collisionAngle);
+
+        double[] polarB2 = rectToPolar(obj2.getVX(), obj2.getVY(), 0, 0);
+        double v2n = polarB2[0] * Math.cos(polarB2[1] - collisionAngle);
+        double v2t = polarB2[0] * Math.sin(polarB2[1] - collisionAngle);
+
+        // Handle collision in 1D
+        double[] newV = handleHorizontalCollision(obj1, obj2, v1n, v2n);
+        double newV1n = newV[0];
+        double newV2n = newV[1];
+
+        // Convert from (newSpeed1, newAngle2) back to rectangular
+        double newSpeed1 = Math.sqrt(newV1n * newV1n + v1t * v1t);
+        double newAngle1 = Math.atan2(v1t, newV1n) + collisionAngle;
+        double[] rect1 = polarToRect(newSpeed1, newAngle1, 0, 0);
+        obj1.setVX(rect1[0]);
+        obj1.setVY(rect1[1]);
+
+        // Convert from (newSpeed2, newAngle2) back to rectangular
+        double newSpeed2 = Math.sqrt(newV2n * newV2n + v2t * v2t);
+        double newAngle2 = Math.atan2(v2t, newV2n) + collisionAngle;
+        double[] rect2 = polarToRect(newSpeed2, newAngle2, 0, 0);
+        obj2.setVX(rect2[0]);
+        obj2.setVY(rect2[1]);
+
+        //  Ensure balls are not overlapping after collision
+        separateBalls(obj1, obj2);
     }
 
     /**
@@ -35,63 +57,59 @@ public class BallCollisionStrategy implements PhysicalObjectCollisionStrategy {
     }
 
     /**
-     * Rotate the velocity vectors of two balls by an angle theta.
+     * Rectangular coordinates (x, y) to polar coordinates (r, theta)
      */
-    private void rotateCollisionLine(PhysicalObject ob1, PhysicalObject ob2, double theta) {
-        rotateVectors(ob1, theta);
-        rotateVectors(ob2, theta);
+    double[] rectToPolar(double x, double y, double centerX, double centerY) {
+        double dx = x - centerX;
+        double dy = y - centerY;
+        double r = Math.sqrt(dx * dx + dy * dy);
+        double theta = Math.atan2(dy, dx);
+        return new double[]{r, theta};
     }
 
     /**
-     * Rotate the velocity vector of a ball by an angle theta.
+     *  Polar coordinates (r, theta) to rectangular coordinates (x, y)
      */
-    private void rotateVectors(PhysicalObject obj, double theta) {
-        double vx = obj.getVX() * Math.cos(theta) - obj.getVY() * Math.sin(theta);
-        double vy = obj.getVX() * Math.sin(theta) + obj.getVY() * Math.cos(theta);
-        obj.setVX(vx);
-        obj.setVY(vy);
+    double[] polarToRect(double r, double theta, double centerX, double centerY) {
+        double x = centerX + r * Math.cos(theta);
+        double y = centerY + r * Math.sin(theta);
+        return new double[]{x, y};
     }
 
     /**
-     * Handle collision of two balls moving in horizontal direction
+     * Calculates the collision angle between two balls
      */
-    private void handleHorizontalCollision(PhysicalObject ob1, PhysicalObject ob2) {
-        double m1 = ob1.getMass();
-        double m2 = ob2.getMass();
-        double u1 = ob1.getVX();
-        double u2= ob2.getVX();
-
-        double v1 = (m1*u1 + 2*m2*u2 - m2*u1)/(m1 + m2);
-        double v2 = u1 - u2 + v1;
-
-        ob1.setVX(v1);
-        ob2.setVX(v2);
+    double calculateCollisionAngle (PhysicalObject b1, PhysicalObject b2) {
+        return Math.atan2(b2.getY() - b1.getY(), b2.getX() - b1.getX());
     }
 
     /**
-     * Adjust positions of two overlapping balls to eliminate overlap before handling collision.
+     * Handle collision horizontally, 1D
      */
-    private void separateBallsBeforeCollision(PhysicalObject obj1, PhysicalObject obj2) {
-        double dx = obj2.getX() - obj1.getX();
-        double dy = obj2.getY() - obj1.getY();
+    double[] handleHorizontalCollision(PhysicalObject obj1, PhysicalObject obj2, double v1n, double v2n) {
+        double totalMass =  obj1.getMass() + obj2.getMass();
+        double newV1n = ((obj1.getMass() - obj2.getMass()) * v1n + 2 * obj2.getMass() * v2n) / totalMass;
+        double newV2n = ((obj2.getMass() - obj1.getMass()) * v2n + 2 * obj1.getMass() * v1n) / totalMass;
+        return new double[]{newV1n, newV2n};
+    }
+
+    /**
+     * Separate the balls if they are overlapping
+     */
+    void separateBalls(PhysicalObject b1, PhysicalObject b2) {
+        double dx = b2.getX() - b1.getX();
+        double dy = b2.getY() - b1.getY();
         double distance = Math.sqrt(dx * dx + dy * dy);
-        double minDist = obj1.getRadius() + obj2.getRadius();
+        double overlap = (b1.getRadius() + b2.getRadius()) - distance;
 
-        if (distance < minDist) {
-            // Normalize the collision axis
-            double nx = dx / distance;
-            double ny = dy / distance;
-
-            // Calculate the overlap
-            double overlap = minDist - distance;
-
-            // Adjust positions to eliminate overlap
-            obj1.setX(obj1.getX() - overlap * nx / 2);
-            obj1.setY(obj1.getY() - overlap * ny / 2);
-            obj2.setX(obj2.getX() + overlap * nx / 2);
-            obj2.setY(obj2.getY() + overlap * ny / 2);
+        if (overlap > 0) {
+            double angle = Math.atan2(dy, dx);
+            double separation = overlap / 2;
+            b1.setX(b1.getX() - separation * Math.cos(angle));
+            b1.setY(b1.getY() - separation * Math.sin(angle));
+            b2.setX(b2.getX() + separation * Math.cos(angle));
+            b2.setY(b2.getY() + separation * Math.sin(angle));
         }
     }
-
 
 }

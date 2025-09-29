@@ -60,12 +60,10 @@ public class PhysicsEngine {
         obj.setY(newY);
     }
 
-
     /**
      * Handle collision of ball with walls.
      */
     public void handleWallCollision(PhysicalObject obj, double areaWidth, double areaHeight) {
-
         if (obj.getX() < obj.getRadius() || obj.getX() > areaWidth - obj.getRadius()) {
             handleXOverlap(obj, areaWidth);
             obj.setVX(obj.getVX()*-1); // change direction of ball
