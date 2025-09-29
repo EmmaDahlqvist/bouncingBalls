@@ -34,6 +34,94 @@ class ModelTest {
     }
 
     @Test
+    void testBallDirectionAfterObliqueCollisionWithGravity() {
+        PhysicsEngine physicsEngine = new PhysicsEngine(100, 100);
+        physicsEngine.setCollisionStrategy(new BallCollisionStrategy());
+
+        // Initialize balls
+        Ball ball1 = new Ball(10, 10, 1, 1, 1, 1); // Moving diagonally up-right
+        Ball ball2 = new Ball(12, 12, -1, -1, 1, 1); // Moving diagonally down-left
+
+        double deltaT = 0.1;
+        double gravity = -9.82;
+
+        // Apply gravity
+        ball1.setVY(ball1.getVY() + gravity * deltaT);
+        ball2.setVY(ball2.getVY() + gravity * deltaT);
+
+        // Calculate expected velocities after collision
+        double m1 = ball1.getMass();
+        double m2 = ball2.getMass();
+        double u1x = ball1.getVX(), u1y = ball1.getVY();
+        double u2x = ball2.getVX(), u2y = ball2.getVY();
+
+        // Relative velocity along the collision axis
+        double dx = ball2.getX() - ball1.getX();
+        double dy = ball2.getY() - ball1.getY();
+        double distance = Math.sqrt(dx * dx + dy * dy);
+        double nx = dx / distance, ny = dy / distance;
+
+        // Velocity components along the collision axis
+        double v1n = u1x * nx + u1y * ny;
+        double v2n = u2x * nx + u2y * ny;
+
+        // Post-collision normal velocities (elastic collision)
+        double v1nAfter = (v1n * (m1 - m2) + 2 * m2 * v2n) / (m1 + m2);
+        double v2nAfter = (v2n * (m2 - m1) + 2 * m1 * v1n) / (m1 + m2);
+
+        // Tangential velocities remain unchanged
+        double v1t = u1x * -ny + u1y * nx;
+        double v2t = u2x * -ny + u2y * nx;
+
+        // Convert back to x, y components
+        double expectedVX1 = v1nAfter * nx - v1t * ny;
+        double expectedVY1 = v1nAfter * ny + v1t * nx;
+        double expectedVX2 = v2nAfter * nx - v2t * ny;
+        double expectedVY2 = v2nAfter * ny + v2t * nx;
+
+        // Simulate collision
+        physicsEngine.update(new PhysicalObject[]{ball1, ball2}, deltaT);
+
+        // Assert velocities
+        assertEquals(expectedVX1, ball1.getVX(), 1e-6, "Boll 1 har fel VX efter kollision");
+        assertEquals(expectedVY1, ball1.getVY(), 1e-6, "Boll 1 har fel VY efter kollision");
+        assertEquals(expectedVX2, ball2.getVX(), 1e-6, "Boll 2 har fel VX efter kollision");
+        assertEquals(expectedVY2, ball2.getVY(), 1e-6, "Boll 2 har fel VY efter kollision");
+    }
+
+    @Test
+    void testBallDirectionAfterCollisionWithGravity() {
+        PhysicsEngine physicsEngine = new PhysicsEngine(100, 100);
+        physicsEngine.setCollisionStrategy(new BallCollisionStrategy());
+
+        // Testfall: Boll 1 rör sig rakt mot Boll 2
+        Ball ball1 = new Ball(10, 10, 1, 0, 1, 1); // Ball 1 moving right
+        Ball ball2 = new Ball(12, 10, -1, 0, 1, 1); // Ball 2 moving left
+
+        double deltaT = 0.1;
+        double gravity = -9.82;
+
+        // Applicera gravitation på bollarna innan kollision
+        ball1.setVY(ball1.getVY() + gravity * deltaT);
+        ball2.setVY(ball2.getVY() + gravity * deltaT);
+
+        // Simulera en kollision
+        physicsEngine.update(new PhysicalObject[]{ball1, ball2}, deltaT);
+
+        // Beräkna den förväntade vinkeln för Boll 1 och Boll 2 efter gravitation
+        double expectedAngleBall1 = Math.atan2(ball1.getVY(), ball1.getVX());
+        double expectedAngleBall2 = Math.atan2(ball2.getVY(), ball2.getVX());
+
+        // Faktiska vinklar efter kollision
+        double actualAngleBall1 = Math.atan2(ball1.getVY(), ball1.getVX());
+        double actualAngleBall2 = Math.atan2(ball2.getVY(), ball2.getVX());
+
+        // Kontrollera att vinklarna är korrekta
+        assertEquals(expectedAngleBall1, actualAngleBall1, 1e-6, "Boll 1 har fel riktning efter kollision");
+        assertEquals(expectedAngleBall2, actualAngleBall2, 1e-6, "Boll 2 har fel riktning efter kollision");
+    }
+
+    @Test
     void testMomentumAndEnergyConservation() {
         // Calculate initial momentum and energy
         double initialMomentum = b1.m * b1.vx + b2.m * b2.vx;

@@ -24,8 +24,10 @@ class Model {
 		
 		// Initialize the model with a few balls
 		balls = new Ball[2];
+
 		balls[0] = new Ball(width / 3, height * 0.9, 1, -1, 0.2, 1);
 		balls[1] = new Ball(width / 3.2, height * 0.7, -4, 1, 0.3,2);
+
 		//balls[2] = new Ball(width / 3, height * 0.9, 1, 1, 0.2, 1);
 		//balls[3] = new Ball(width / 2, height * 0.9, -1, 1, 0.2,1);
 
