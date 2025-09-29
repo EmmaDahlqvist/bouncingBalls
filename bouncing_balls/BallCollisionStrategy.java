@@ -1,9 +1,21 @@
 package bouncing_balls;
+/**
+ * Implements collision detection and response for collisions between balls.
+ * 
+ * This strategy handles elastic collision between two circular physical objects
+ * using conservation of momentum and energy. 
+ * 
+ * @authors Emma Dahlqvist, Shifaa Mahmoud, Aisha Mohamed
+ * @see PhysicalObjectCollisionStrategy
+ */
 
 public class BallCollisionStrategy implements PhysicalObjectCollisionStrategy {
 
     /**
-     * Handle collision between two balls.
+     * Handle collision between two ball objects.
+     * 
+     * @param obj1 the first physical object involved in collision
+     * @param obj2 the second physical object involved in collision
      */
     @Override
     public void handleCollision(PhysicalObject obj1, PhysicalObject obj2) {
@@ -46,7 +58,11 @@ public class BallCollisionStrategy implements PhysicalObjectCollisionStrategy {
     }
 
     /**
-     * Detect if two balls are colliding.
+     * Detect if two physical objects are colliding based on their position and radius
+     * 
+     * @param obj1 the first physical object
+     * @param obj2 the second physical object
+     * @return true if the objects are colliding, false otherwise
      */
     private boolean objectCollisionDetected(PhysicalObject obj1, PhysicalObject obj2) {
         double dx = obj2.getX() - obj1.getX();
@@ -55,9 +71,18 @@ public class BallCollisionStrategy implements PhysicalObjectCollisionStrategy {
         return distance < (obj1.getRadius() + obj2.getRadius());
     }
 
+
     /**
-     * Rectangular coordinates (x, y) to polar coordinates (r, theta)
+     * Converts rectangular coordinates (x, y) to polar coordinates (r, theta).
+     *
+     * @param x the x-coordinate in rectangular system
+     * @param y the y-coordinate in rectangular system
+     * @param centerX the x coordinate of the origin for polar conversion
+     * @param centerY the y coordinate of the origin for polar conversion
+     * @return an array where [0] is radius and [1] is angle 
+     * @see #polarToRect(double, double, double, double)
      */
+
     double[] rectToPolar(double x, double y, double centerX, double centerY) {
         double dx = x - centerX;
         double dy = y - centerY;
@@ -66,8 +91,15 @@ public class BallCollisionStrategy implements PhysicalObjectCollisionStrategy {
         return new double[]{r, theta};
     }
 
+   
     /**
-     *  Polar coordinates (r, theta) to rectangular coordinates (x, y)
+     * Converts polar coordinates (r, theta) to rectangular coordinates (x, y).
+     *
+     * @param r the radius in polar coordinates
+     * @param theta the angle in polar coordinates
+     * @param centerX the x coordinate of the origin for rectangular conversion
+     * @param centerY the y coordinate of the origin for rectangular conversion
+     * @return an array where [0] is x coordinate and [1] is y coordinate
      */
     double[] polarToRect(double r, double theta, double centerX, double centerY) {
         double x = centerX + r * Math.cos(theta);
@@ -76,14 +108,26 @@ public class BallCollisionStrategy implements PhysicalObjectCollisionStrategy {
     }
 
     /**
-     * Calculates the collision angle between two balls
+     * Calculates the collision angle between two physical objects.
+     * 
+     * @param b1 is the first physical object
+     * @param b2 is the second physical object
+     * @return the collision angle 
      */
+    
     double calculateCollisionAngle (PhysicalObject b1, PhysicalObject b2) {
         return Math.atan2(b2.getY() - b1.getY(), b2.getX() - b1.getX());
     }
 
     /**
-     * Handle collision horizontally, 1D, conserves momentum and energy
+     * Handles a 1D horizontal collision between two objects. 
+     * Conserves both momentum and energy. 
+     * 
+     * @param obj1 the first physical object
+     * @param obj2 the second physical object
+     * @param v1n the velocity of obj1
+     * @param v2n the velocity of obj2
+     * @return an array where [0] is new velocity for obj1 and [1] is new velocity for obj2
      */
     double[] handleHorizontalCollision(PhysicalObject obj1, PhysicalObject obj2, double v1n, double v2n) {
         double totalMass =  obj1.getMass() + obj2.getMass();
@@ -93,7 +137,10 @@ public class BallCollisionStrategy implements PhysicalObjectCollisionStrategy {
     }
 
     /**
-     * Separate the balls if they are overlapping
+     * Separating two overlapping physical objects by moving them apart.
+     * 
+     * @param b1 the first physical object
+     * @param b2 the second physical object
      */
     void separateBalls(PhysicalObject b1, PhysicalObject b2) {
         double dx = b2.getX() - b1.getX();
