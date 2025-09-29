@@ -139,22 +139,22 @@ public class BallCollisionStrategy implements PhysicalObjectCollisionStrategy {
     /**
      * Separating two overlapping physical objects by moving them apart.
      * 
-     * @param b1 the first physical object
-     * @param b2 the second physical object
+     * @param obj1 the first physical object
+     * @param obj2 the second physical object
      */
-    void separateBalls(PhysicalObject b1, PhysicalObject b2) {
-        double dx = b2.getX() - b1.getX();
-        double dy = b2.getY() - b1.getY();
+    void separateBalls(PhysicalObject obj1, PhysicalObject obj2) {
+        double dx = obj2.getX() - obj1.getX();
+        double dy = obj2.getY() - obj1.getY();
         double distance = Math.sqrt(dx * dx + dy * dy);
-        double overlap = (b1.getRadius() + b2.getRadius()) - distance;
+        double overlap = (obj1.getRadius() + obj2.getRadius()) - distance;
 
         if (overlap > 0) {
             double angle = Math.atan2(dy, dx);
             double separation = overlap / 2;
-            b1.setX(b1.getX() - separation * Math.cos(angle));
-            b1.setY(b1.getY() - separation * Math.sin(angle));
-            b2.setX(b2.getX() + separation * Math.cos(angle));
-            b2.setY(b2.getY() + separation * Math.sin(angle));
+            obj1.setX(obj1.getX() - separation * Math.cos(angle));
+            obj1.setY(obj1.getY() - separation * Math.sin(angle));
+            obj2.setX(obj2.getX() + separation * Math.cos(angle));
+            obj2.setY(obj2.getY() + separation * Math.sin(angle));
         }
     }
 
